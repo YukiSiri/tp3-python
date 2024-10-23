@@ -324,12 +324,19 @@ class MockFunction:
 @contextmanager
 def patch(target, return_value):
     frame = inspect.currentframe().f_back
-    original = frame.f_globals.get(target.__name__) or frame.f_locals.get(target.__name__)
-    mock = MockFunction(return_value)
+    original = None
+
+    # Check in the global scope
     if target.__name__ in frame.f_globals:
-        frame.f_globals[target.__name__] = mock
+        original = frame.f_globals[target.__name__]
+        frame.f_globals[target.__name__] = MockFunction(return_value)
+    # Check in the local scope
+    elif target.__name__ in frame.f_locals:
+        original = frame.f_locals[target.__name__]
+        frame.f_locals[target.__name__] = MockFunction(return_value)
     else:
-        frame.f_locals[target.__name__] = mock
+        raise ValueError(f"Function {target.__name__} not found in the current scope")
+
     try:
         yield
     finally:
