@@ -3,7 +3,9 @@ import math
 import threading
 import time
 from contextlib import contextmanager
-
+import statistics
+from statistics import *
+import inspect
 
 # Exercice 1: Classe Abstraite Simple
 class Shape(ABC):
@@ -48,6 +50,14 @@ class BankAccount:
             raise ValueError("Cannot subtract more than the current balance")
         self.balance -= amount
         return self
+
+# Exercice 3: Décorateurs
+def check_positive(func):
+    def wrapper(n):
+        if n < 0:
+            raise ValueError("The number must be positive")
+        return func(n)
+    return wrapper
 
 
 # Exercice 4: Propriétés (Property)
@@ -284,7 +294,7 @@ class Account:
         self.balance -= amount
 
 
-# Exercice 14: Surcharge d'Opérateurs (Vecteur)
+# Exercice 13: Surcharge d'Opérateurs (Vecteur)
 class Vector:
     def __init__(self, x, y):
         self.x = x
@@ -303,7 +313,7 @@ class Vector:
         return f"Vector({self.x}, {self.y})"
 
 
-# Exercice 15: Mock et Monkey-Patch
+# Exercice 14: Mock et Monkey-Patch
 class MockFunction:
     def __init__(self, return_value):
         self.return_value = return_value
@@ -313,8 +323,62 @@ class MockFunction:
 
 @contextmanager
 def patch(target, return_value):
-    original = target
-    target = MockFunction(return_value)
-    yield
-    target = original
+    frame = inspect.currentframe().f_back
+    original = frame.f_globals.get(target.__name__) or frame.f_locals.get(target.__name__)
+    mock = MockFunction(return_value)
+    if target.__name__ in frame.f_globals:
+        frame.f_globals[target.__name__] = mock
+    else:
+        frame.f_locals[target.__name__] = mock
+    try:
+        yield
+    finally:
+        if target.__name__ in frame.f_globals:
+            frame.f_globals[target.__name__] = original
+        else:
+            frame.f_locals[target.__name__] = original
 
+#Exercice 15: Classes Génériques et Méthodes Statistiques
+class Statistics:
+    def __init__(self, data):
+        self.data = data
+
+    def mean(self):
+        return statistics.mean(self.data)
+
+    def median(self):
+        return statistics.median(self.data)
+
+    def variance(self):
+        return statistics.variance(self.data)
+
+#Exercice 16: Surcharge d'Opérateurs (Vecteur 3D)
+class Vector3D:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __add__(self, other):
+        if not isinstance(other, Vector3D):
+            raise TypeError("Operands must be of type Vector3D")
+        return Vector3D(self.x + other.x, self.y + other.y, self.z + other.z)
+
+    def __sub__(self, other):
+        if not isinstance(other, Vector3D):
+            raise TypeError("Operands must be of type Vector3D")
+        return Vector3D(self.x - other.x, self.y - other.y, self.z - other.z)
+
+    def __mul__(self, other):
+        if isinstance(other, Vector3D):
+            return self.x * other.x + self.y * other.y + self.z * other.z  # Dot product
+        elif isinstance(other, (int, float)):
+            return Vector3D(self.x * other, self.y * other, self.z * other)  # Scalar multiplication
+        else:
+            raise TypeError("Operand must be of type Vector3D or a number")
+
+    def norm(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+
+    def __repr__(self):
+        return f"Vector3D({self.x}, {self.y}, {self.z})"
